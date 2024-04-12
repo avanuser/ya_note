@@ -27,7 +27,12 @@ class TestRoutes(TestCase):
     def test_pages_availability_for_author(self):
         urls = (
             ('notes:home', None),
+            ('notes:add', None),
+            ('notes:edit', (self.note.slug,)),
             ('notes:detail', (self.note.slug,)),
+            ('notes:delete', (self.note.slug,)),
+            ('notes:list', None),
+            ('notes:success', None),
             ('users:login', None),
             ('users:logout', None),
             ('users:signup', None),
