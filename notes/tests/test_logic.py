@@ -59,8 +59,9 @@ class TestNoteEditDelete(TestCase):
     # Тексты для комментариев не нужно дополнительно создавать 
     # (в отличие от объектов в БД), им не нужны ссылки на self или cls, 
     # поэтому их можно перечислить просто в атрибутах класса.
-    NOTE_TEXT = 'Текст комментария'
-    NEW_NOTE_TEXT = 'Обновлённый комментарий'
+    NOTE_TEXT = 'Старый текст'
+    NEW_NOTE_TEXT = 'Новый текст'
+    TITLE = 'Заголовок'
 
     @classmethod
     def setUpTestData(cls):
@@ -74,16 +75,16 @@ class TestNoteEditDelete(TestCase):
         cls.reader_client.force_login(cls.reader)
         # Создаём заметку в БД.
         cls.note = Note.objects.create(
-            title='Title', text=cls.NOTE_TEXT, slug='text', author=cls.author
+            title=cls.TITLE, text=cls.NOTE_TEXT, slug='text', author=cls.author
         )
-        # Формируем адрес блока с комментариями, который понадобится для тестов.
+        # Формируем адрес блока с заметками, который понадобится для тестов.
         cls.note_url = reverse('notes:detail', args=(cls.note.slug,))
-        # URL для редактирования комментария.
+        # URL для редактирования заметки.
         cls.edit_url = reverse('notes:edit', args=(cls.note.slug,))
-        # URL для удаления комментария.
+        # URL для удаления заметки.
         cls.delete_url = reverse('notes:delete', args=(cls.note.slug,))
-        # Формируем данные для POST-запроса по обновлению комментария.
-        cls.form_data = {'text': cls.NEW_NOTE_TEXT}
+        # Формируем данные для POST-запроса по обновлению заметки.
+        cls.form_data = {'title': cls.TITLE, 'text': cls.NEW_NOTE_TEXT}
 
     def test_author_can_delete_note(self):
         # От имени автора комментария отправляем DELETE-запрос на удаление.
@@ -96,3 +97,15 @@ class TestNoteEditDelete(TestCase):
         notes_count = Note.objects.count()
         # Ожидаем ноль комментариев в системе.
         self.assertEqual(notes_count, 0)
+
+    def test_author_can_edit_note(self):
+        # Выполняем запрос на редактирование от имени автора комментария.
+        response = self.author_client.post(self.edit_url, data=self.form_data)
+        # Проверяем, что код - 200.
+        # self.assertEqual(response.status_code, HTTPStatus.OK)
+        url = reverse('notes:success')
+        self.assertRedirects(response, url)
+        # Обновляем объект комментария.
+        self.note.refresh_from_db()
+        # Проверяем, что текст комментария соответствует обновленному.
+        self.assertEqual(self.note.text, self.NEW_NOTE_TEXT)
